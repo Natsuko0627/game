@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ガチャゲーム</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 30px;
+    }
+
+    .container {
+      margin-top: 40px;
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: gold;
+      color: black;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .card {
+      margin: 20px auto;
+      padding: 20px;
+      width: 200px;
+      border-radius: 15px;
+      font-size: 20px;
+    }
+
+    .N { background: gray; }
+    .R { background: blue; }
+    .SR { background: purple; }
+    .SSR { background: gold; color: black; }
+
+  </style>
+</head>
+<body>
+
+  <h1>🎮 ガチャゲーム</h1>
+
+  <div class="container">
+    <button onclick="drawGacha()">ガチャを引く！</button>
+
+    <div class="result" id="result"></div>
+    <div id="card"></div>
+  </div>
+
+  <script>
+    const characters = [
+      { name: "スライム", rarity: "N", rate: 50 },
+      { name: "ゴブリン", rarity: "N", rate: 25 },
+      { name: "ナイト", rarity: "R", rate: 15 },
+      { name: "ドラゴン", rarity: "SR", rate: 8 },
+      { name: "神龍", rarity: "SSR", rate: 2 }
+    ];
+
+    function drawGacha() {
+      const rand = Math.random() * 100;
+      let sum = 0;
+
+      for (let char of characters) {
+        sum += char.rate;
+        if (rand <= sum) {
+          showResult(char);
+          break;
+        }
+      }
+    }
+
+    function showResult(char) {
+      const result = document.getElementById("result");
+      const card = document.getElementById("card");
+
+      result.textContent = `結果：${char.rarity} - ${char.name}`;
+
+      card.innerHTML = `
+        <div class="card ${char.rarity}">
+          <div>${char.rarity}</div>
+          <div>${char.name}</div>
+        </div>
+      `;
+
+      if (char.rarity === "SSR") {
+        alert("✨ SSRゲット！！！ ✨");
+      }
+    }
+  </script>
+
+</body>
+</html>
