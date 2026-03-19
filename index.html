@@ -1,113 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>ガチャゲーム</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
+<meta charset="UTF-8">
+<title>スロットゲーム</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: radial-gradient(circle, #111, #000);
+    color: white;
+    text-align: center;
+  }
 
-    h1 {
-      margin-top: 30px;
-    }
+  h1 {
+    margin-top: 20px;
+  }
 
-    .container {
-      margin-top: 40px;
-    }
+  .slot-container {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0;
+    gap: 20px;
+  }
 
-    button {
-      padding: 15px 30px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: gold;
-      color: black;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+  .reel {
+    width: 100px;
+    height: 120px;
+    background: #222;
+    border: 4px solid gold;
+    border-radius: 10px;
+    font-size: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px gold;
+  }
 
-    button:hover {
-      transform: scale(1.1);
-    }
+  button {
+    padding: 15px 40px;
+    font-size: 20px;
+    border: none;
+    border-radius: 10px;
+    background: gold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
 
-    .result {
-      margin-top: 30px;
-      font-size: 24px;
-      font-weight: bold;
-    }
+  button:hover {
+    transform: scale(1.1);
+  }
 
-    .card {
-      margin: 20px auto;
-      padding: 20px;
-      width: 200px;
-      border-radius: 15px;
-      font-size: 20px;
-    }
-
-    .N { background: gray; }
-    .R { background: blue; }
-    .SR { background: purple; }
-    .SSR { background: gold; color: black; }
-
-  </style>
+  .result {
+    margin-top: 30px;
+    font-size: 24px;
+    height: 30px;
+  }
+</style>
 </head>
 <body>
 
-  <h1>🎮 ガチャゲーム</h1>
+<h1>🎰 スロットゲーム</h1>
 
-  <div class="container">
-    <button onclick="drawGacha()">ガチャを引く！</button>
+<div class="slot-container">
+  <div class="reel" id="reel1">🍒</div>
+  <div class="reel" id="reel2">🍋</div>
+  <div class="reel" id="reel3">🍊</div>
+</div>
 
-    <div class="result" id="result"></div>
-    <div id="card"></div>
-  </div>
+<button onclick="startSlot()">回す！</button>
 
-  <script>
-    const characters = [
-      { name: "スライム", rarity: "N", rate: 50 },
-      { name: "ゴブリン", rarity: "N", rate: 25 },
-      { name: "ナイト", rarity: "R", rate: 15 },
-      { name: "ドラゴン", rarity: "SR", rate: 8 },
-      { name: "神龍", rarity: "SSR", rate: 2 }
-    ];
+<div class="result" id="result"></div>
 
-    function drawGacha() {
-      const rand = Math.random() * 100;
-      let sum = 0;
+<script>
+const symbols = ["🍒", "🍋", "🍊", "⭐", "🔔", "7️⃣"];
+let spinning = false;
 
-      for (let char of characters) {
-        sum += char.rate;
-        if (rand <= sum) {
-          showResult(char);
-          break;
-        }
-      }
-    }
+function randomSymbol() {
+  return symbols[Math.floor(Math.random() * symbols.length)];
+}
 
-    function showResult(char) {
-      const result = document.getElementById("result");
-      const card = document.getElementById("card");
+function spinReel(element, duration) {
+  return new Promise(resolve => {
+    const interval = setInterval(() => {
+      element.textContent = randomSymbol();
+    }, 100);
 
-      result.textContent = `結果：${char.rarity} - ${char.name}`;
+    setTimeout(() => {
+      clearInterval(interval);
+      const finalSymbol = randomSymbol();
+      element.textContent = finalSymbol;
+      resolve(finalSymbol);
+    }, duration);
+  });
+}
 
-      card.innerHTML = `
-        <div class="card ${char.rarity}">
-          <div>${char.rarity}</div>
-          <div>${char.name}</div>
-        </div>
-      `;
+async function startSlot() {
+  if (spinning) return;
+  spinning = true;
 
-      if (char.rarity === "SSR") {
-        alert("✨ SSRゲット！！！ ✨");
-      }
-    }
-  </script>
+  const resultEl = document.getElementById("result");
+  resultEl.textContent = "回転中...";
+
+  const reel1 = document.getElementById("reel1");
+  const reel2 = document.getElementById("reel2");
+  const reel3 = document.getElementById("reel3");
+
+  const r1 = spinReel(reel1, 1000);
+  const r2 = spinReel(reel2, 1500);
+  const r3 = spinReel(reel3, 2000);
+
+  const results = await Promise.all([r1, r2, r3]);
+
+  if (results[0] === results[1] && results[1] === results[2]) {
+    resultEl.textContent = "🎉 大当たり！ 🎉";
+  } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
+    resultEl.textContent = "✨ 惜しい！2つ揃い！";
+  } else {
+    resultEl.textContent = "ハズレ...";
+  }
+
+  spinning = false;
+}
+</script>
 
 </body>
 </html>
+
