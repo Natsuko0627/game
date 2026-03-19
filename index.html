@@ -12,14 +12,14 @@
     text-align: center;
   }
 
-  h1 {
-    margin-top: 20px;
-  }
+  h1 { margin-top: 20px; }
+
+  .money { font-size: 20px; margin-top: 10px; }
 
   .slot-container {
     display: flex;
     justify-content: center;
-    margin: 40px 0;
+    margin: 30px 0;
     gap: 20px;
   }
 
@@ -37,29 +37,23 @@
   }
 
   button {
-    padding: 15px 40px;
-    font-size: 20px;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     background: gold;
     cursor: pointer;
-    transition: 0.2s;
   }
 
-  button:hover {
-    transform: scale(1.1);
-  }
-
-  .result {
-    margin-top: 30px;
-    font-size: 24px;
-    height: 30px;
-  }
+  .result { margin-top: 20px; font-size: 22px; height: 30px; }
 </style>
 </head>
 <body>
 
-<h1>🎰 スロットゲーム</h1>
+<h1>🎰 スロットゲーム（目押し＋確変）</h1>
+<div class="money" id="money">所持金: 1000</div>
+<div class="money" id="mode">通常モード</div>
 
 <div class="slot-container">
   <div class="reel" id="reel1">🍒</div>
@@ -67,59 +61,101 @@
   <div class="reel" id="reel3">🍊</div>
 </div>
 
-<button onclick="startSlot()">回す！</button>
+<div>
+  <button onclick="startGame()">スタート（100円）</button><br>
+  <button onclick="stopReel(0)">停止①</button>
+  <button onclick="stopReel(1)">停止②</button>
+  <button onclick="stopReel(2)">停止③</button>
+</div>
 
 <div class="result" id="result"></div>
 
 <script>
-const symbols = ["🍒", "🍋", "🍊", "⭐", "🔔", "7️⃣"];
-let spinning = false;
+const normalSymbols = ["🍒","🍋","🍊","⭐","🔔","7️⃣"];
+const kakuSymbols = ["7️⃣","7️⃣","7️⃣","⭐","7️⃣","🔔"]; // 確変は7多め
+
+let reels = [null, null, null];
+let intervals = [];
+let spinning = [false, false, false];
+let money = 1000;
+let kakuhen = false;
+
+function getSymbols() {
+  return kakuhen ? kakuSymbols : normalSymbols;
+}
 
 function randomSymbol() {
-  return symbols[Math.floor(Math.random() * symbols.length)];
+  const s = getSymbols();
+  return s[Math.floor(Math.random() * s.length)];
 }
 
-function spinReel(element, duration) {
-  return new Promise(resolve => {
-    const interval = setInterval(() => {
-      element.textContent = randomSymbol();
-    }, 100);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      const finalSymbol = randomSymbol();
-      element.textContent = finalSymbol;
-      resolve(finalSymbol);
-    }, duration);
-  });
-}
-
-async function startSlot() {
-  if (spinning) return;
-  spinning = true;
-
-  const resultEl = document.getElementById("result");
-  resultEl.textContent = "回転中...";
-
-  const reel1 = document.getElementById("reel1");
-  const reel2 = document.getElementById("reel2");
-  const reel3 = document.getElementById("reel3");
-
-  const r1 = spinReel(reel1, 1000);
-  const r2 = spinReel(reel2, 1500);
-  const r3 = spinReel(reel3, 2000);
-
-  const results = await Promise.all([r1, r2, r3]);
-
-  if (results[0] === results[1] && results[1] === results[2]) {
-    resultEl.textContent = "🎉 大当たり！ 🎉";
-  } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
-    resultEl.textContent = "✨ 惜しい！2つ揃い！";
-  } else {
-    resultEl.textContent = "ハズレ...";
+function startGame() {
+  if (spinning.includes(true)) return;
+  if (money < 100) {
+    alert("お金が足りません！");
+    return;
   }
 
-  spinning = false;
+  money -= 100;
+  updateMoney();
+
+  for (let i = 0; i < 3; i++) {
+    const reelEl = document.getElementById("reel" + (i+1));
+    spinning[i] = true;
+
+    intervals[i] = setInterval(() => {
+      reelEl.textContent = randomSymbol();
+    }, 100);
+  }
+
+  document.getElementById("result").textContent = "回転中...";
+}
+
+function stopReel(index) {
+  if (!spinning[index]) return;
+
+  clearInterval(intervals[index]);
+  const reelEl = document.getElementById("reel" + (index+1));
+  const symbol = randomSymbol();
+  reelEl.textContent = symbol;
+  reels[index] = symbol;
+  spinning[index] = false;
+
+  if (spinning.every(v => !v)) {
+    checkResult();
+  }
+}
+
+function checkResult() {
+  const resultEl = document.getElementById("result");
+
+  if (reels[0] === reels[1] && reels[1] === reels[2]) {
+    if (reels[0] === "7️⃣") {
+      money += 1000;
+      kakuhen = true;
+      resultEl.textContent = "🎉 777！確変突入！+1000円";
+    } else {
+      money += 300;
+      resultEl.textContent = "✨ 大当たり！+300円";
+    }
+  } else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) {
+    money += 100;
+    resultEl.textContent = "👍 2つ揃い！+100円";
+  } else {
+    kakuhen = false;
+    resultEl.textContent = "ハズレ（通常に戻る）";
+  }
+
+  updateMoney();
+  updateMode();
+}
+
+function updateMoney() {
+  document.getElementById("money").textContent = "所持金: " + money;
+}
+
+function updateMode() {
+  document.getElementById("mode").textContent = kakuhen ? "🔥 確変モード" : "通常モード";
 }
 </script>
 
